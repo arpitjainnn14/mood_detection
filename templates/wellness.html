@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}TheraVox - Wellness{% endblock %}
+{% block content %}
+  <section class="hero has-hero-logo" data-reveal>
+    <div class="hero__bg">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+    </div>
+    <div class="hero__content">
+      <h1 class="hero__title">Your Wellness Toolkit</h1>
+      <p class="hero__subtitle">Ground, breathe, reflect — small steps that make a big difference.</p>
+      <div class="hero__cta">
+        <a class="btn primary" href="#breathe">Start Breathing</a>
+        <a class="btn ghost" href="#journal">Open Journal</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid" style="margin-top: 20px;" data-stagger>
+    <section id="breathe" class="card" data-reveal>
+      <h2>Breathing Coach</h2>
+      <p class="muted">Follow the gentle animation. Inhale when it expands, exhale when it shrinks.</p>
+      <div class="breath-coach">
+        <div class="breath-circle" id="breathCircle" aria-label="Breathing animation" role="img"></div>
+        <div class="breath-controls">
+          <button id="breathToggle" class="btn primary">Start</button>
+          <select id="breathPattern">
+            <option value="box">Box (4-4-4-4)</option>
+            <option value="478">4-7-8</option>
+            <option value="calm" selected>Calm (4-4)</option>
+          </select>
+        </div>
+        <div id="breathLabel" class="muted" style="margin-top:8px;">Ready</div>
+      </div>
+    </section>
+
+    <section id="ground" class="card" data-reveal>
+      <h2>5-4-3-2-1 Grounding</h2>
+      <p class="muted">Name what you can sense right now to anchor yourself in the present.</p>
+      <ol class="grounding-list">
+        <li><span class="badge">5</span> things you can see</li>
+        <li><span class="badge">4</span> things you can touch</li>
+        <li><span class="badge">3</span> things you can hear</li>
+        <li><span class="badge">2</span> things you can smell</li>
+        <li><span class="badge">1</span> thing you can taste</li>
+      </ol>
+      <button class="btn" id="groundingStart">Start Prompt</button>
+      <div id="groundingPrompt" class="muted" style="margin-top:8px;"></div>
+    </section>
+
+    <section id="mood" class="card" data-reveal>
+      <h2>Mood Check</h2>
+      <p class="muted">Tap how you feel for quick, helpful suggestions.</p>
+      <div class="controls" style="flex-wrap:wrap; gap:8px;">
+        <button class="btn" data-mood="stressed">Stressed</button>
+        <button class="btn" data-mood="anxious">Anxious</button>
+        <button class="btn" data-mood="low">Low</button>
+        <button class="btn" data-mood="angry">Angry</button>
+        <button class="btn" data-mood="overwhelmed">Overwhelmed</button>
+      </div>
+      <div id="moodTip" class="muted" style="margin-top:8px;"></div>
+    </section>
+
+    <section id="routine" class="card" data-reveal>
+      <h2>3‑Minute Reset</h2>
+      <p class="muted">A short guided routine to calm and refocus.</p>
+      <ol class="stack" id="routineSteps" style="margin:0">
+        <li class="muted">00:00 – 00:45 • Slow breathing (follow the circle)</li>
+        <li class="muted">00:45 – 01:30 • 5‑4‑3‑2‑1 grounding (press Start Prompt)</li>
+        <li class="muted">01:30 – 02:00 • Stretch shoulders and neck gently</li>
+        <li class="muted">02:00 – 03:00 • Think of one small, doable next step</li>
+      </ol>
+      <div class="controls">
+        <button id="routineStart" class="btn primary">Start 3‑min Timer</button>
+        <button id="routineStop" class="btn" disabled>Stop</button>
+      </div>
+      <div id="routineStatus" class="muted" style="margin-top:6px;">Ready</div>
+    </section>
+
+    <section class="card" data-reveal>
+      <h2>Helpful Resources</h2>
+      <p class="muted">If you need more support, these may help.</p>
+      <ul class="stack">
+        <li><a class="btn ghost" href="https://www.mentalhealth.gov/" target="_blank" rel="noopener">US: MentalHealth.gov</a></li>
+        <li><a class="btn ghost" href="https://www.samaritans.org/" target="_blank" rel="noopener">Samaritans (24/7)</a></li>
+        <li><a class="btn ghost" href="https://www.who.int/campaigns/connecting-the-world-to-combat-coronavirus/healthyathome/healthyathome---mental-health" target="_blank" rel="noopener">WHO: Mental Health</a></li>
+      </ul>
+      <p class="muted" style="font-size:12px;">This is not medical advice. If you are in crisis, contact your local emergency number.</p>
+    </section>
+
+    <section class="card" data-reveal>
+      <h2>Affirmations</h2>
+      <p id="affirmation" class="muted" style="margin:0">You are doing your best with the tools you have.</p>
+      <div class="controls" style="margin-top:8px;">
+        <button id="nextAffirmation" class="btn">New affirmation</button>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

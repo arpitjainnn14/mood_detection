@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}TheraVox{% endblock %}
+{% block content %}
+  <div class="grid">
+      <section id="vision" class="card">
+        <h2>Webcam (Face Emotions)</h2>
+        <p class="muted">Allow camera access, then capture a frame to analyze faces and emotions.</p>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        <div class="controls">
+          <button id="snap">Analyze Frame</button>
+          <button id="saveShot">Save Screenshot</button>
+        </div>
+        <div id="faces" class="stack"></div>
+      </section>
+
+      <section id="text" class="card">
+        <h2>Text Emotion</h2>
+        <p class="muted">Paste some text and analyze its emotional tone.</p>
+        <textarea id="text" rows="6" placeholder="Type or paste text here..."></textarea>
+        <div class="controls">
+          <button id="analyzeText">Analyze Text</button>
+        </div>
+        <div id="textResult" class="stack"></div>
+      </section>
+
+      <section id="audio" class="card">
+        <h2>Audio Emotion</h2>
+        <p class="muted">Upload an audio file (preferably WAV) for analysis.</p>
+        <input type="file" id="audioFile" accept="audio/*" />
+        <div class="controls">
+          <button id="analyzeAudio">Analyze Audio</button>
+        </div>
+        <hr style="border-color: var(--border); opacity:.4; margin: 14px 0;" />
+        <p class="muted">Or record live using your microphone:</p>
+        <div class="controls">
+          <button id="recordAudio">Record</button>
+          <button id="stopRecording" disabled>Stop</button>
+        </div>
+        <div id="recordStatus" class="muted" style="margin-top:6px;"></div>
+        <div id="audioResult" class="stack"></div>
+      </section>
+    </div>
+{% endblock %}

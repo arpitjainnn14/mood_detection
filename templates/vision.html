@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Vision Analyzer{% endblock %}
+{% block content %}
+  <section class="hero" data-reveal>
+    <div class="hero__bg">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+    </div>
+    <div class="hero__content">
+      <h1 class="hero__title">Vision Emotion Analysis</h1>
+      <p class="hero__subtitle">Detect faces and emotions in real‑time using your webcam.</p>
+    </div>
+  </section>
+
+  <div class="grid" style="margin-top:20px;" data-stagger>
+    <section id="vision-tool" class="card" data-reveal style="grid-column: 1 / -1;">
+      <h2 style="margin:0 0 6px">Webcam Analyzer</h2>
+      <p class="muted">Allow camera access, then start continuous analysis or capture a single frame.</p>
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas" class="hidden"></canvas>
+      <div class="controls">
+        <button id="startAnalysis">Start Analyzing</button>
+        <button id="snap">Capture Frame</button>
+        <button id="saveShot">Save Screenshot</button>
+      </div>
+      <div id="analysisStatus" class="muted" style="margin-top: 8px; font-size: 14px;"></div>
+      <div id="faces" class="stack"></div>
+    </section>
+
+    <section class="card" data-reveal style="grid-column: 1 / -1;">
+      <h2 style="margin:0 0 6px">Tips</h2>
+      <ul class="stack" style="margin:0">
+        <li class="muted">Good lighting improves detection quality.</li>
+        <li class="muted">Keep your face centered and visible.</li>
+        <li class="muted">Use “Start Analyzing” for ongoing results.</li>
+        <li class="muted">Save a screenshot to your local folder.</li>
+      </ul>
+    </section>
+  </div>
+{% endblock %}

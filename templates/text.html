@@ -1,0 +1,150 @@
+﻿{% extends 'base.html' %}
+{% block title %}Text Analyzer{% endblock %}
+{% block content %}
+  <section class="hero" data-reveal>
+    <div class="hero__bg">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+    </div>
+    <div class="hero__content">
+      <h1 class="hero__title">Text Emotion Analysis</h1>
+      <p class="hero__subtitle">Paste your text and uncover the emotional tone instantly.</p>
+    </div>
+  </section>
+
+  <div class="grid" style="margin-top:20px;" data-stagger>
+    <section id="text-tool" class="card" data-reveal style="grid-column: 1 / -1;">
+      <h2 style="margin:0 0 6px">Analyzer</h2>
+      <p class="muted">Paste some text and analyze its emotional tone.</p>
+        <div class="controls" style="justify-content: space-between; align-items: center;">
+          <div class="stack" style="gap:6px;">
+            <div class="select-wrapper">
+              <select id="examples">
+                <option value="">— Insert an example —</option>
+                <option>I'm feeling great today and really proud of what I accomplished!</option>
+                <option>This is disgusting and I can't believe it.</option>
+                <option>I'm not happy with the outcome and it makes me anxious.</option>
+                <option>What a surprise! Totally didn't expect that.</option>
+              </select>
+            </div>
+            <div id="counts" class="muted" style="font-size: 12px;">0 words  0 chars</div>
+          </div>
+        </div>
+        <textarea id="text" rows="8" placeholder="Type or paste text here..."></textarea>
+      <div class="controls">
+        <button id="analyzeText">Analyze Text</button>
+      </div>
+      <div id="textResult" class="stack"></div>
+    </section>
+
+    <section class="card" data-reveal style="grid-column: 1 / -1;">
+      <h2 style="margin:0 0 6px">About</h2>
+      <p class="muted" style="margin:0">Powered by a transformer model with a rule-based fallback for robustness. Your text is processed to return emotion, confidence, and a short description.</p>
+    </section>
+  </div>
+<script>
+  (function(){
+    const ta = document.getElementById('text');
+    const counts = document.getElementById('counts');
+    const dd = document.getElementById('examples');
+    const res = document.getElementById('textResult');
+    const btn = document.getElementById('analyzeText');
+
+    function updateCounts(){
+      const text = ta.value || '';
+      const words = (text.trim().match(/\S+/g) || []).length;
+      counts.textContent = `${words} words  ${text.length} chars`;
+    }
+    
+    ta.addEventListener('input', updateCounts);
+    
+    dd.addEventListener('change', () => { 
+      if (dd.value) { 
+        ta.style.opacity = '0.7';
+        ta.style.transform = 'scale(0.98)';
+        
+        setTimeout(() => {
+          ta.value = dd.value; 
+          updateCounts();
+          ta.style.opacity = '1';
+          ta.style.transform = 'scale(1)';
+          ta.focus();
+        }, 150);
+      }
+    });
+    
+    dd.addEventListener('focus', () => {
+      dd.parentElement.style.transform = 'translateY(-2px)';
+    });
+    
+    dd.addEventListener('blur', () => {
+      dd.parentElement.style.transform = 'translateY(0)';
+    });
+    
+    updateCounts();
+
+    btn.addEventListener('click', async () => {
+      const text = ta.value.trim();
+      if(!text){ 
+        res.innerHTML = '<div class="emotion-result"><div class="face"> Enter some text first.</div></div>'; 
+        return; 
+      }
+      
+      res.innerHTML = `
+        <div class="emotion-result">
+          <div class="loading-skeleton loading-badge"></div>
+          <div class="confidence-meter">
+            <div class="loading-skeleton loading-text"></div>
+            <div class="loading-skeleton confidence-bar"></div>
+          </div>
+        </div>
+      `;
+      
+      try {
+        const r = await fetch('/api/analyze_text', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ text }) 
+        });
+        
+        if (!r.ok) {
+          throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        }
+        
+        const data = await r.json();
+        
+        if (typeof createEmotionDisplay === 'function') {
+          res.innerHTML = createEmotionDisplay(data);
+        } else {
+          const conf = Math.round(data.confidence * 100);
+          const emotionClass = data.emotion.toLowerCase();
+          res.innerHTML = `
+            <div class="emotion-result">
+              <div class="emotion-badge ${emotionClass}">
+                <span style="font-size: 24px;">${data.emoji || ''}</span>
+                <span>${data.emotion?.toUpperCase?.() || data.emotion}</span>
+              </div>
+              <div class="confidence-meter">
+                <div class="confidence-label">
+                  <span>Confidence Level</span>
+                  <span>${conf}%</span>
+                </div>
+                <div class="confidence-bar">
+                  <div class="confidence-fill" style="width: ${conf}%"></div>
+                </div>
+              </div>
+              <div style="margin-top: 16px; color: var(--muted); font-size: 14px;">
+                ${data.description || 'Emotion analysis complete'}
+              </div>
+            </div>
+          `;
+        }
+      } catch(e){
+        console.error('Text analysis error:', e);
+        res.innerHTML = `<div class="emotion-result"><div class="face error"> Error: ${e.message}</div></div>`;
+      }
+    });
+  })();
+</script>
+{% endblock %}

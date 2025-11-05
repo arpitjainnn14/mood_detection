@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}TheraVox — Developers{% endblock %}
+{% block content %}
+<section class="card" style="max-width: 1100px; margin: 0 auto;">
+  <h1 style="margin-top:0;">Project Developers</h1>
+  <p class="muted">Capstone Final Project • 8 Credits</p>
+
+  <div class="team-grid" style="margin-top: 16px;">
+    <!-- Member 1 -->
+    <article class="member-card">
+      <div class="avatar" data-initials="AJ" aria-hidden="true"></div>
+      <header>
+        <h3 class="member-name">Arpit Jain</h3>
+        <p class="member-role muted">Full‑stack & Vision</p>
+      </header>
+      <p class="member-bio">Focus on DeepFace tuning, FastAPI backends, and UI polish. Loves building clean UX with robust backends.</p>
+      <div class="member-links">
+        <a class="social" href="#" aria-label="Arpit on LinkedIn" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_linkedin.svg' %}</a>
+        <a class="social" href="#" aria-label="Arpit on GitHub" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_github.svg' %}</a>
+      </div>
+    </article>
+
+    <!-- Member 2 -->
+    <article class="member-card">
+      <div class="avatar" data-initials="BC" aria-hidden="true"></div>
+      <header>
+        <h3 class="member-name">Bhoomi Chowksey</h3>
+        <p class="member-role muted">Text & Frontend</p>
+      </header>
+      <p class="member-bio">Implemented the rule‑based text analyzer and refined the animated homepage.</p>
+      <div class="member-links">
+        <a class="social" href="#" aria-label="Bhoomi on LinkedIn" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_linkedin.svg' %}</a>
+        <a class="social" href="#" aria-label="Bhoomi on GitHub" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_github.svg' %}</a>
+      </div>
+    </article>
+
+    <!-- Member 3 -->
+    <article class="member-card">
+      <div class="avatar" data-initials="AD" aria-hidden="true"></div>
+      <header>
+        <h3 class="member-name">Ajit Dixit</h3>
+        <p class="member-role muted">Audio & Infra</p>
+      </header>
+      <p class="member-bio">Built the audio pipeline and stabilized live recording with client‑side WAV encode.</p>
+      <div class="member-links">
+        <a class="social" href="#" aria-label="Ajit on LinkedIn" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_linkedin.svg' %}</a>
+        <a class="social" href="#" aria-label="Ajit on GitHub" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_github.svg' %}</a>
+      </div>
+    </article>
+
+    <!-- Member 4 -->
+    <article class="member-card">
+      <div class="avatar" data-initials="SU" aria-hidden="true"></div>
+      <header>
+        <h3 class="member-name">Suchita</h3>
+        <p class="member-role muted">QA & Docs</p>
+      </header>
+      <p class="member-bio">Tested features end‑to‑end and improved documentation and onboarding.</p>
+      <div class="member-links">
+        <a class="social" href="#" aria-label="Suchita on LinkedIn" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_linkedin.svg' %}</a>
+        <a class="social" href="#" aria-label="Suchita on GitHub" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_github.svg' %}</a>
+      </div>
+    </article>
+
+    <!-- Member 5 -->
+    <article class="member-card">
+      <div class="avatar" data-initials="AD" aria-hidden="true"></div>
+      <header>
+        <h3 class="member-name">Aditi</h3>
+        <p class="member-role muted">UX & Integration</p>
+      </header>
+      <p class="member-bio">Led the page layouts, base template, and helped integrate APIs with the web UI.</p>
+      <div class="member-links">
+        <a class="social" href="#" aria-label="Aditi on LinkedIn" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_linkedin.svg' %}</a>
+        <a class="social" href="#" aria-label="Aditi on GitHub" target="_blank" rel="noreferrer noopener">{% include 'partials/icon_github.svg' %}</a>
+      </div>
+    </article>
+  </div>
+
+  <div class="face" style="margin-top:18px;">
+    <h3>About this project</h3>
+    <p>TheraVox provides real‑time AI emotion analysis from faces, text, and audio. It reduces neutral bias in vision with tuned thresholds and margins, uses a lightweight rule‑based model for text (negation, intensifiers, emoticons), and a fast heuristic audio pipeline. The web app offers a modern, responsive UI with live camera/mic capture and a Save Screenshot feature.</p>
+  </div>
+</section>
+{% endblock %}

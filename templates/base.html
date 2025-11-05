@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}TheraVox{% endblock %}</title>
+  <meta name="description" content="TheraVox — AI-powered emotion analysis across Vision, Text, and Audio." />
+  <meta name="theme-color" content="#0f141a" />
+  <link rel="icon" type="image/png" href="{{ request.url_for('static', path='img/logo.png') }}" />
+  <link rel="apple-touch-icon" href="{{ request.url_for('static', path='img/logo.png') }}" />
+  <link rel="canonical" href="{{ request.base_url if request else '/' }}" />
+  <meta property="og:title" content="TheraVox" />
+  <meta property="og:description" content="AI-powered emotion analysis across Vision, Text, and Audio." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="{{ request.url_for('static', path='img/logo.png') if request else '/static/img/logo.png' }}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="header">
+    <div class="container header__inner">
+  <a class="brand" href="/" aria-label="Go to homepage">
+        <img class="brand__logo" src="{{ request.url_for('static', path='img/logo.png') }}" alt="TheraVox Logo"
+             onload="this.closest('.brand')?.classList.add('has-logo')"
+             onerror="this.remove()" />
+        <span class="brand__text">TheraVox</span>
+      </a>
+      <nav class="nav">
+    {% set path = request.path if request else '' %}
+    <a href="/vision" class="{{ 'active' if path.startswith('/vision') else '' }}">Vision</a>
+    <a href="/text" class="{{ 'active' if path.startswith('/text') else '' }}">Text</a>
+    <a href="/audio" class="{{ 'active' if path.startswith('/audio') else '' }}">Audio</a>
+    <a href="/wellness" class="{{ 'active' if path.startswith('/wellness') else '' }}">Wellness</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span>Developed by Team 226 © 2025 · <a href="/wellness" style="color:inherit; text-decoration:underline;">Wellness Toolkit</a></span>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+  <script src="/static/app.js"></script>
+  {% if not path.startswith('/wellness') %}
+  <a href="/wellness" class="floating-wellness" aria-label="Open Wellness Toolkit">🧘 Wellness</a>
+  {% endif %}
+</body>
+</html>

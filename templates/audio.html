@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Audio Analyzer{% endblock %}
+{% block content %}
+  <section class="hero" data-reveal>
+    <div class="hero__bg">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+    </div>
+    <div class="hero__content">
+      <h1 class="hero__title">Audio Emotion Analysis</h1>
+      <p class="hero__subtitle">Upload or record audio and get clear emotion insights.</p>
+    </div>
+  </section>
+
+  <div class="grid" style="margin-top:20px;" data-stagger>
+    <section id="audio-tool" class="card" data-reveal style="grid-column: 1 / -1;">
+      <h2 style="margin:0 0 6px">Analyzer</h2>
+      <p class="muted">Upload an audio file (WAV/MP3) and analyze its emotional tone.</p>
+      
+      <div class="file-drop-zone" id="audioDropZone">
+        <div style="font-size: 48px; margin-bottom: 16px;">🎵</div>
+        <p style="margin: 8px 0; font-size: 18px; color: var(--text);">Drag & drop audio file here</p>
+        <p style="margin: 4px 0; color: var(--muted);">or click to browse</p>
+        <input type="file" id="audioFile" accept="audio/*" style="display: none;" />
+      </div>
+      
+      <div class="controls">
+        <button id="analyzeAudio" disabled>Analyze Audio</button>
+      </div>
+      <hr style="border-color: var(--border); opacity:.4; margin: 14px 0;" />
+      <p class="muted">Or record live using your microphone:</p>
+      <div class="controls">
+        <button id="recordAudio">Record</button>
+        <button id="stopRecording" disabled>Stop</button>
+      </div>
+      <div id="recordStatus" class="muted" style="margin-top:6px;"></div>
+      <div id="audioResult" class="stack"></div>
+    </section>
+
+    <section class="card" data-reveal style="grid-column: 1 / -1;">
+      <h2 style="margin:0 0 6px">Tips</h2>
+      <ul class="stack" style="margin:0">
+        <li class="muted">Use clear recordings for best results.</li>
+        <li class="muted">Avoid background noise when possible.</li>
+        <li class="muted">Short clips (≤15s) analyze faster.</li>
+      </ul>
+    </section>
+  </div>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% block title %}TheraVox - AI Powered Emotion Analyzer{% endblock %}
+{% block content %}
+  <section class="hero has-hero-logo">
+    <div class="hero__bg">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+    </div>
+    <div class="hero__content">
+  <img class="hero__logo" src="{{ request.url_for('static', path='img/logo.png') }}" alt="TheraVox logo" />
+      <div class="hero__heading">
+        <h1 class="hero__title">Feel the Mood with TheraVox</h1>
+      </div>
+      <p class="hero__subtitle">Reading Emotions, Empowering Care.</p>
+      <div class="hero__cta">
+        <a class="btn primary" href="/vision">Get Started</a>
+        <a class="btn ghost" href="/developers">Meet the Developers</a>
+      </div>
+    </div>
+  </section>
+  
+  <section class="features" data-reveal>
+    <div class="hero__heading" style="justify-content:center; margin-top:10px;">
+      <h2 class="hero__title" style="font-size: clamp(22px, 4vw, 32px);">Explore TheraVox Features</h2>
+    </div>
+    <p class="hero__subtitle" style="text-align:center; margin-top:6px;">Choose a modality to analyze emotions with style and accuracy</p>
+    <div class="grid" style="margin-top:16px;" data-stagger>
+      <a class="card" href="/vision" data-reveal="left" style="text-decoration:none; color:inherit; display:block;">
+        <div class="stack">
+          <div style="font-size:28px">📷</div>
+          <h3 style="margin:0">Vision</h3>
+          <p class="muted" style="margin:0">Use your webcam to detect faces and read visual emotions in real‑time.</p>
+          <div class="controls">
+            <span class="btn primary">Open Vision</span>
+          </div>
+        </div>
+      </a>
+      <a class="card" href="/text" data-reveal style="text-decoration:none; color:inherit; display:block;">
+        <div class="stack">
+          <div style="font-size:28px">✍️</div>
+          <h3 style="margin:0">Text</h3>
+          <p class="muted" style="margin:0">Paste any text and uncover the underlying emotional tone instantly.</p>
+          <div class="controls">
+            <span class="btn primary">Analyze Text</span>
+          </div>
+        </div>
+      </a>
+      <a class="card" href="/audio" data-reveal="right" style="text-decoration:none; color:inherit; display:block;">
+        <div class="stack">
+          <div style="font-size:28px">🎵</div>
+          <h3 style="margin:0">Audio</h3>
+          <p class="muted" style="margin:0">Upload or record audio to interpret vocal emotion with confidence.</p>
+          <div class="controls">
+            <span class="btn primary">Try Audio</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="highlights" style="margin-top:20px;" data-stagger>
+    <div class="grid">
+      <div class="card" data-reveal="left">
+        <h3 style="margin:0">Fast & Private</h3>
+        <p class="muted" style="margin:6px 0 0">Client‑side interactions with minimal round‑trips. Your data stays yours.</p>
+      </div>
+      <div class="card" data-reveal>
+        <h3 style="margin:0">Multimodal</h3>
+        <p class="muted" style="margin:6px 0 0">Analyze emotions from Vision, Text, and Audio in one place.</p>
+      </div>
+      <div class="card" data-reveal="right">
+        <h3 style="margin:0">Wellness Tools</h3>
+        <p class="muted" style="margin:6px 0 0">Built‑in breathing, grounding, and journaling to support you.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-it-works" style="margin-top:20px;" data-reveal>
+    <div class="hero__heading" style="justify-content:center;">
+      <h2 class="hero__title" style="font-size: clamp(22px, 4vw, 32px);">How It Works</h2>
+    </div>
+    <div class="grid" style="margin-top:16px;" data-stagger>
+      <div class="card" data-reveal="left">
+        <div class="stack">
+          <div class="badge">1</div>
+          <h3 style="margin:0">Choose a Modality</h3>
+          <p class="muted" style="margin:0">Open Vision, Text, or Audio depending on your input.</p>
+        </div>
+      </div>
+      <div class="card" data-reveal>
+        <div class="stack">
+          <div class="badge">2</div>
+          <h3 style="margin:0">Run Analysis</h3>
+          <p class="muted" style="margin:0">Capture a frame, paste text, or upload/record audio.</p>
+        </div>
+      </div>
+      <div class="card" data-reveal="right">
+        <div class="stack">
+          <div class="badge">3</div>
+          <h3 style="margin:0">Review Insights</h3>
+          <p class="muted" style="margin:0">See emotion, emoji, confidence, and a helpful description.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-wellness" style="margin-top:20px;" data-reveal>
+    <div class="card" style="text-align:center;">
+      <h3 style="margin:0 0 6px">Take a Breather</h3>
+      <p class="muted" style="margin:0 0 10px">Try the Wellness toolkit for guided breathing, grounding, and journaling.</p>
+      <a class="btn primary" href="/wellness">Open Wellness</a>
+    </div>
+  </section>
+
+  <section class="testimonials" style="margin-top:20px;" data-reveal>
+    <div class="hero__heading" style="justify-content:center;">
+      <h2 class="hero__title" style="font-size: clamp(22px, 4vw, 32px);">What Users Say</h2>
+    </div>
+    <div class="grid" style="margin-top:16px;" data-stagger>
+      <div class="card" data-reveal="left">
+        <p style="margin:0">“The vision analyzer is super intuitive and fast.”</p>
+        <p class="muted" style="margin:6px 0 0">— A. Sharma</p>
+      </div>
+      <div class="card" data-reveal>
+        <p style="margin:0">“Text insights helped me quickly gauge tone in chats.”</p>
+        <p class="muted" style="margin:6px 0 0">— R. Khan</p>
+      </div>
+      <div class="card" data-reveal="right">
+        <p style="margin:0">“Audio emotion results were surprisingly accurate.”</p>
+        <p class="muted" style="margin:6px 0 0">— M. Patel</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq" style="margin-top:20px;" data-reveal>
+    <div class="hero__heading" style="justify-content:center;">
+      <h2 class="hero__title" style="font-size: clamp(22px, 4vw, 32px);">FAQ</h2>
+    </div>
+    <div class="grid" style="margin-top:16px;">
+      <div class="card">
+        <details>
+          <summary>Is my data stored?</summary>
+          <p class="muted" style="margin-top:8px">Analyses are processed for results; screenshots you save stay in your folder. Text journal data on Wellness is saved locally in your browser.</p>
+        </details>
+      </div>
+      <div class="card">
+        <details>
+          <summary>Do I need special hardware?</summary>
+          <p class="muted" style="margin-top:8px">A standard webcam and microphone are sufficient for Vision and Audio features.</p>
+        </details>
+      </div>
+      <div class="card">
+        <details>
+          <summary>Can I use mobile?</summary>
+          <p class="muted" style="margin-top:8px">Yes, the site is responsive. Permissions for camera/microphone vary by browser.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+{% endblock %}
