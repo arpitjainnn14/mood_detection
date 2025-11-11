@@ -14,6 +14,15 @@ except Exception:
     librosa = None
     sf = None
 
+# Optional: Hugging Face Whisper SER model (fine-tuned for audio classification)
+try:
+    import torch
+    from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
+except Exception:
+    torch = None
+    AutoModelForAudioClassification = None
+    AutoFeatureExtractor = None
+
 try:
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.preprocessing import StandardScaler, RobustScaler
@@ -62,6 +71,143 @@ class AudioEmotionAnalyzer:
             ])
             # Pre-train with synthetic data for better baseline
             self._initialize_classifier()
+
+        # Lazy-load HF Whisper SER model on first use
+        self._hf_model_id = "firdhokk/speech-emotion-recognition-with-openai-whisper-large-v3"
+        self._hf_model = None
+        self._hf_extractor = None
+        self._hf_id2label = None
+
+    def _ensure_hf_model(self) -> bool:
+        """Load the HF Whisper SER model lazily. Returns True if ready, else False."""
+        if AutoModelForAudioClassification is None or AutoFeatureExtractor is None or torch is None:
+            return False
+        if self._hf_model is not None and self._hf_extractor is not None:
+            return True
+        try:
+            import os
+            # Optionally reduce CPU thread contention for faster, smoother startup
+            try:
+                cpu_threads = int(os.environ.get("AUDIO_TORCH_THREADS", "0"))
+                if cpu_threads > 0:
+                    torch.set_num_threads(cpu_threads)
+            except Exception:
+                pass
+            # Select device (allow forcing CPU via env for predictable startup)
+            force_device = os.environ.get("AUDIO_DEVICE", "").strip().lower()
+            if force_device == "cpu":
+                device = torch.device("cpu")
+            else:
+                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            # Use CPU or CUDA if available
+            model = AutoModelForAudioClassification.from_pretrained(self._hf_model_id)
+            extractor = AutoFeatureExtractor.from_pretrained(self._hf_model_id, do_normalize=True)
+            model.to(device)
+            model.eval()
+            self._hf_model = model
+            self._hf_extractor = extractor
+            self._hf_id2label = getattr(model.config, "id2label", None)
+            logging.info("Loaded HF Whisper SER model: %s", self._hf_model_id)
+            return True
+        except Exception as e:
+            logging.warning(f"Failed to load HF SER model '{self._hf_model_id}': {e}")
+            self._hf_model = None
+            self._hf_extractor = None
+            return False
+
+    def get_runtime_status(self) -> Dict:
+        """Return diagnostic info about audio runtime and HF model availability."""
+        hf_libs_available = (AutoModelForAudioClassification is not None and
+                             AutoFeatureExtractor is not None and
+                             torch is not None)
+        hf_loaded = self._hf_model is not None and self._hf_extractor is not None
+        device = None
+        if hf_loaded:
+            try:
+                device = str(next(self._hf_model.parameters()).device)
+            except Exception:
+                device = "unknown"
+        return {
+            "hf_libs_available": bool(hf_libs_available),
+            "hf_model_id": self._hf_model_id,
+            "hf_loaded": bool(hf_loaded),
+            "device": device,
+            "librosa_available": librosa is not None,
+            "emotions_supported": list(self.emotions),
+        }
+
+    def _hf_predict(self, audio_path: str) -> Optional[Tuple[str, float]]:
+        """Run prediction using the HF Whisper SER model; return (emotion, confidence) or None on failure."""
+        if not self._ensure_hf_model():
+            return None
+        try:
+            # Load audio at native sr; feature extractor will resample
+            if librosa is None:
+                return None
+            y, sr = librosa.load(audio_path, sr=None, mono=True)
+            if y is None or len(y) == 0:
+                return None
+
+            # Limit duration to 30s as per model card example
+            max_duration = 30.0
+            sampling_rate = getattr(self._hf_extractor, "sampling_rate", 16000)
+            max_length = int(sampling_rate * max_duration)
+
+            # Resample to model's expected sampling rate
+            if sr != sampling_rate:
+                y = librosa.resample(y, orig_sr=sr, target_sr=sampling_rate)
+
+            if len(y) > max_length:
+                y = y[:max_length]
+            else:
+                y = np.pad(y, (0, max_length - len(y)))
+
+            inputs = self._hf_extractor(
+                y,
+                sampling_rate=sampling_rate,
+                max_length=max_length,
+                truncation=True,
+                return_tensors="pt",
+            )
+
+            device = next(self._hf_model.parameters()).device
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+
+            with torch.no_grad():
+                outputs = self._hf_model(**inputs)
+                logits = outputs.logits
+                probs = torch.softmax(logits, dim=-1).squeeze(0)
+                pred_id = int(torch.argmax(probs, dim=-1).item())
+                confidence = float(probs[pred_id].item())
+
+            if self._hf_id2label and pred_id in self._hf_id2label:
+                label = self._hf_id2label[pred_id]
+            else:
+                # Fallback mapping if id2label is not present
+                label = str(pred_id)
+
+            # Normalize label text to match our emotion set if possible
+            label_norm = label.lower()
+            # Model labels are typically: Angry, Disgust, Fearful, Happy, Neutral, Sad, Surprised
+            mapping = {
+                'angry': 'angry',
+                'disgust': 'disgust',
+                'fearful': 'fear',
+                'happy': 'happy',
+                'neutral': 'neutral',
+                'sad': 'sad',
+                'surprised': 'surprise',
+                'surprise': 'surprise',
+            }
+            emotion = mapping.get(label_norm, label_norm)
+            if emotion not in self.emotions:
+                # fallback to neutral if unknown
+                emotion = 'neutral'
+
+            return emotion, confidence
+        except Exception as e:
+            logging.warning(f"HF SER prediction failed: {e}")
+            return None
 
     def _initialize_classifier(self):
         """Initialize classifier with synthetic training data based on emotion characteristics."""
@@ -495,6 +641,11 @@ class AudioEmotionAnalyzer:
             return 'neutral', 0.0
         
         try:
+            # 0) Try Hugging Face Whisper SER first for best accuracy
+            hf_pred = self._hf_predict(audio_path)
+            if hf_pred is not None:
+                return hf_pred
+
             # Load audio file
             y, sr = librosa.load(audio_path, sr=22050, mono=True)  # Standardize sample rate
             if y is None or len(y) == 0:

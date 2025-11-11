@@ -277,6 +277,7 @@ if (analyzeTextBtn) {
 // Audio drag & drop functionality
 const audioDropZone = document.getElementById('audioDropZone');
 const audioFileInput = document.getElementById('audioFile');
+const audioPreview = document.getElementById('audioPreview');
 
 if (audioDropZone && audioFileInput) {
   // Click to browse
@@ -331,6 +332,12 @@ function updateAudioDropZone(file) {
       <p style="margin: 8px 0; font-size: 16px; color: var(--accent1);">${file.name}</p>
       <p style="margin: 4px 0; color: var(--muted);">Ready to analyze</p>
     `;
+  }
+  // Preview selected audio
+  if (audioPreview && file) {
+    const url = URL.createObjectURL(file);
+    audioPreview.src = url;
+    try { audioPreview.load(); } catch {}
   }
 }
 
@@ -537,6 +544,12 @@ async function stopRecordingAndAnalyze() {
       return;
     }
     const wavBlob = encodeWav(recordedBuffers, sampleRate);
+    // Preview recorded audio
+    if (audioPreview) {
+      const url = URL.createObjectURL(wavBlob);
+      audioPreview.src = url;
+      try { audioPreview.load(); } catch {}
+    }
     const form = new FormData();
     form.append('file', wavBlob, 'recording.wav');
     const audioResult = document.getElementById('audioResult');

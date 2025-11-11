@@ -1,25 +1,38 @@
 import re
+import logging
 from typing import Dict, List, Tuple, Optional
+
+logger = logging.getLogger(__name__)
 
 try:
     from transformers import pipeline  # type: ignore
+    import torch
 except Exception:
-    pipeline = None  # Fallback if transformers isn't available
+    pipeline = None
+    torch = None
 
 class TextEmotionAnalyzer:
     """
-    Lighter, fixed version of your original analyzer with:
-    - normalized text handling
-    - set-based lexicons
-    - safe exclamation boost (only if there is evidence)
-    - small improvements to negation/intensifier handling
+    Text emotion analyzer using Hugging Face transformer model:
+    - Uses michellejieli/emotion_text_classifier for 6 emotions
+    - Adds neutral emotion detection (7 emotions total)
+    - Falls back to lexicon-based analysis if transformer unavailable
     """
 
     def __init__(self) -> None:
         # Lazy-initialized transformer pipeline
         self._hf_pipe = None  # type: Optional[object]
-        # Core lexicons (use sets for fast membership checks).
-        # Add common word-forms or consider lemmatization for completeness.
+        
+        # 7 emotions: 6 from HF model + neutral
+        # Model emotions: sadness, joy, love, anger, fear, surprise
+        # We map them to: sad, happy, happy, angry, fear, surprise
+        # Plus neutral (detected via low confidence threshold)
+        self.emotions = ['happy', 'sad', 'angry', 'fear', 'disgust', 'surprise', 'neutral']
+        
+        # Neutral detection threshold
+        self.neutral_threshold = 0.35  # If max confidence < this, classify as neutral
+        
+        # Core lexicons for fallback (use sets for fast membership checks)
         self.lex: Dict[str, set] = {
             'happy': set(['happy','joy','joyful','glad','excited','love','lovely','awesome','great','amazing',
                           'fantastic','wonderful','delighted','pleased','smile','smiling','cheerful','proud',
@@ -141,52 +154,76 @@ class TextEmotionAnalyzer:
         if self._hf_pipe is not None:
             return True
         if pipeline is None:
+            logger.warning("transformers library not available, using fallback lexicon-based analysis")
             return False
         try:
-            # Compact, accurate English emotion model
-            model_name = "j-hartmann/emotion-english-distilroberta-base"
-            self._hf_pipe = pipeline("text-classification", model=model_name, return_all_scores=True, top_k=None)
+            # Use michellejieli/emotion_text_classifier model
+            model_name = "michellejieli/emotion_text_classifier"
+            device = 0 if torch and torch.cuda.is_available() else -1
+            self._hf_pipe = pipeline(
+                "text-classification",
+                model=model_name,
+                top_k=None,  # Return all scores (replaces deprecated return_all_scores=True)
+                device=device
+            )
+            logger.info(f"Loaded transformer model: {model_name}")
             return True
-        except Exception:
+        except Exception as e:
             # If model fails to load (e.g., offline), skip HF
+            logger.warning(f"Failed to load transformer model: {e}, using fallback")
             self._hf_pipe = None
             return False
 
     def _analyze_transformer(self, text: str) -> Optional[Tuple[str, float]]:
-        """Use transformer model to get emotion -> (label, confidence). Returns None on failure."""
+        """
+        Use transformer model to get emotion -> (label, confidence).
+        Returns None on failure.
+        
+        Model outputs 6 emotions: sadness, joy, love, anger, fear, surprise
+        We add neutral detection based on confidence threshold.
+        """
         if not text or not self._ensure_hf():
             return None
         try:
-            outputs = self._hf_pipe(text[:2048])  # limit extremely long inputs
+            outputs = self._hf_pipe(text[:512])  # limit to 512 tokens for efficiency
             # outputs is a list with one item: list of dicts {label, score}
             scores = outputs[0]
-            # Map model labels to our schema
-            label_map = {
-                'joy': 'happy',
-                'anger': 'angry',
-                'sadness': 'sad',
-                'fear': 'fear',
-                'disgust': 'disgust',
-                'surprise': 'surprise',
-                # Optional labels commonly present
-                'love': 'happy',
-                'neutral': 'neutral'
-            }
+            
+            # Find the emotion with highest score
             best_label = None
             best_score = -1.0
+            
             for item in scores:
-                raw = item.get('label', '').lower()
+                label = item.get('label', '').lower()
                 score = float(item.get('score', 0.0))
-                mapped = label_map.get(raw)
-                if mapped is None:
-                    continue
+                
                 if score > best_score:
                     best_score = score
-                    best_label = mapped
+                    best_label = label
+            
             if best_label is None:
                 return None
-            return best_label, max(0.0, min(1.0, best_score))
-        except Exception:
+            
+            # If confidence is too low, classify as neutral
+            if best_score < self.neutral_threshold:
+                return 'neutral', best_score
+            
+            # Map model labels to standard emotion names
+            # Model uses: sadness, joy, love, anger, fear, surprise
+            label_map = {
+                'sadness': 'sad',
+                'joy': 'happy',
+                'love': 'happy',  # Map love to happy for consistency
+                'anger': 'angry',
+                'fear': 'fear',
+                'surprise': 'surprise'
+            }
+            
+            mapped_label = label_map.get(best_label, best_label)
+            return mapped_label, max(0.0, min(1.0, best_score))
+            
+        except Exception as e:
+            logger.error(f"Transformer analysis failed: {e}")
             return None
 
     def analyze_text(self, text: str) -> Tuple[str, float]:

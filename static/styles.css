@@ -168,6 +168,12 @@ input[type="file"] { width: 100%; }
 .footer { border-top: 1px solid var(--border); background: var(--surface); margin-top: 24px; }
 .footer__inner { padding: 12px 0; text-align: center; color: var(--muted); font-size: 14px; }
 
+/* Sections */
+.section { margin-top: 24px; }
+.section-header { text-align: center; display: grid; gap: 6px; justify-items: center; }
+.section-title { margin: 0; font-size: clamp(22px, 4vw, 32px); letter-spacing: .2px; }
+.section-subtitle { margin: 0; color: var(--muted); font-size: 15px; }
+
 /* Skip link for accessibility */
 .skip-link {
   position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden;
@@ -616,6 +622,21 @@ input[type="file"] { width: 100%; }
   transform: translateY(-8px);
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
   border-color: var(--accent1);
+}
+.card--link { text-decoration: none; color: inherit; display: block; }
+.card-title { margin: 0; }
+
+/* Feature icon */
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 24px;
+  background: linear-gradient(135deg, rgba(0,188,212,.15), rgba(124,77,255,.15));
+  border: 1px solid var(--border);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
 }
 
 /* Micro-interactions for buttons */
@@ -1110,3 +1131,33 @@ select.loading {
 .link { color: var(--accent1); text-decoration: none; }
 .link:hover { text-decoration: underline; }
 @media (max-width: 960px) { .auth-hero__grid { grid-template-columns: 1fr; } .auth-card { justify-self: stretch; } }
+
+/* ===== FAQ ===== */
+.faq-card details {
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(21,28,35,.85), rgba(21,28,35,.92));
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+}
+.faq-card summary {
+  cursor: pointer;
+  list-style: none;
+  position: relative;
+  font-weight: 600;
+}
+.faq-card summary::-webkit-details-marker { display: none; }
+.faq-card summary::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: translateY(-50%) rotate(-45deg);
+  transition: transform .2s ease;
+}
+.faq-card details[open] summary::after {
+  transform: translateY(-50%) rotate(45deg);
+}
