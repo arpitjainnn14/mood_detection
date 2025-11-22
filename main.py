@@ -4,24 +4,64 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
 import os
-import cv2
 import logging
 import datetime
 from starlette.middleware.gzip import GZipMiddleware
 import asyncio
 
-# Import your modules
-from text_emotion import TextEmotionAnalyzer
-from audio_emotion import AudioEmotionAnalyzer
-from face_detector import FaceDetector
-from emotion_analyzer import EmotionAnalyzer
-from settings import Settings
-
-# Initialize analyzers (lazy load FaceDetector to avoid heavy startup and fork issues)
-text_analyzer = TextEmotionAnalyzer()
-audio_analyzer = AudioEmotionAnalyzer()
-emotion_analyzer = EmotionAnalyzer()
+# Lazy imports for better startup performance
+_cv2 = None
+_text_analyzer = None
+_audio_analyzer = None
+_emotion_analyzer = None
 _face_detector_instance = None
+_settings = None
+
+def get_cv2():
+    global _cv2
+    if _cv2 is None:
+        import cv2
+        _cv2 = cv2
+    return _cv2
+
+def get_text_analyzer():
+    global _text_analyzer
+    if _text_analyzer is None:
+        from text_emotion import TextEmotionAnalyzer
+        _text_analyzer = TextEmotionAnalyzer()
+        logging.info("Text analyzer initialized")
+    return _text_analyzer
+
+def get_audio_analyzer():
+    global _audio_analyzer
+    if _audio_analyzer is None:
+        from audio_emotion import AudioEmotionAnalyzer
+        _audio_analyzer = AudioEmotionAnalyzer()
+        logging.info("Audio analyzer initialized")
+    return _audio_analyzer
+
+def get_emotion_analyzer():
+    global _emotion_analyzer
+    if _emotion_analyzer is None:
+        from emotion_analyzer import EmotionAnalyzer
+        _emotion_analyzer = EmotionAnalyzer()
+        logging.info("Emotion analyzer initialized")
+    return _emotion_analyzer
+
+def get_face_detector():
+    global _face_detector_instance
+    if _face_detector_instance is None:
+        from face_detector import FaceDetector
+        _face_detector_instance = FaceDetector()
+        logging.info("Face detector initialized")
+    return _face_detector_instance
+
+def get_settings():
+    global _settings
+    if _settings is None:
+        from settings import Settings
+        _settings = Settings()
+    return _settings
 
 app = FastAPI()
 
@@ -31,54 +71,22 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Set up templates
 templates = Jinja2Templates(directory="templates")
 
-# Load settings
-settings = Settings()
+# Settings will be loaded lazily
 
 # ====== Perf: compression + optional prewarm ======
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 @app.on_event("startup")
-async def _maybe_prewarm():
-    # Pre-warm transformers to avoid first-request cold start if PREWARM=1
+async def _startup():
+    # Minimal startup - just set OpenCV threads if specified
     try:
-        # Reduce OpenCV thread usage to avoid startup CPU contention (optional)
-        import os as _os
-        threads_str = _os.environ.get("OPENCV_THREADS", "")
+        threads_str = os.environ.get("OPENCV_THREADS", "2")  # Default to 2 threads
         if threads_str:
-            try:
-                cv2.setNumThreads(int(threads_str))
-            except Exception:
-                pass
+            os.environ["OPENCV_NUM_THREADS"] = threads_str
     except Exception:
         pass
-
-    if os.environ.get("PREWARM", "0") == "1":
-        async def warm():
-            try:
-                # small text to trigger model load
-                text_analyzer.analyze_text("hello")
-            except Exception:
-                pass
-        asyncio.create_task(warm())
-    # Optional: Pre-warm audio Whisper SER to cut first-run latency if PREWARM_AUDIO=1
-    if os.environ.get("PREWARM_AUDIO", "0") == "1":
-        async def warm_audio():
-            try:
-                # Lazy ensure model in background
-                audio_analyzer._ensure_hf_model()
-            except Exception:
-                pass
-        asyncio.create_task(warm_audio())
-    # Optional: Pre-warm face detector to remove first-vision-call latency
-    if os.environ.get("PREWARM_VISION", "0") == "1":
-        async def warm_vision():
-            try:
-                global _face_detector_instance
-                if _face_detector_instance is None:
-                    _face_detector_instance = FaceDetector()
-            except Exception:
-                pass
-        asyncio.create_task(warm_vision())
+    
+    logging.info("TheraVox server started - models will be loaded on first use")
 
 @app.middleware("http")
 async def _static_cache_control(request: Request, call_next):
@@ -114,9 +122,15 @@ async def analyze_text(request: Request):
         
         # Offload CPU-bound analysis to a worker thread to keep event loop snappy
         loop = asyncio.get_event_loop()
-        emotion, confidence = await loop.run_in_executor(None, lambda: text_analyzer.analyze_text(text))
+        
+        def analyze_text_sync():
+            analyzer = get_text_analyzer()
+            return analyzer.analyze_text(text)
+            
+        emotion, confidence = await loop.run_in_executor(None, analyze_text_sync)
         
         # Get emoji and description using emotion_analyzer methods
+        emotion_analyzer = get_emotion_analyzer()
         emoji = emotion_analyzer.get_emotion_emoji(emotion)
         description = emotion_analyzer.get_emotion_description(emotion, confidence)
         
@@ -146,14 +160,16 @@ async def health():
             "status": "ok",
             "text_ready": True,
         }
-        # Optional check that won't block: has audio libs
-        try:
-            audio_status = audio_analyzer.get_runtime_status()
-            status["audio_libs"] = bool(audio_status.get("hf_libs_available"))
-            status["audio_loaded"] = bool(audio_status.get("hf_loaded"))
-        except Exception:
-            status["audio_libs"] = False
-            status["audio_loaded"] = False
+        # Check audio status only if analyzer is already loaded
+        status["audio_loaded"] = _audio_analyzer is not None
+        if _audio_analyzer:
+            try:
+                audio_status = _audio_analyzer.get_runtime_status()
+                status["audio_libs"] = bool(audio_status.get("hf_libs_available"))
+            except Exception:
+                status["audio_libs"] = False
+        else:
+            status["audio_libs"] = "not_loaded"
         return JSONResponse(content=status)
     except Exception as e:
         return JSONResponse(content={"status": "error", "error": str(e)}, status_code=500)
@@ -161,12 +177,8 @@ async def health():
 @app.get("/api/audio_status")
 async def audio_status():
     try:
-        # Attempt to pre-load HF model (lazy)
-        _ = audio_analyzer._ensure_hf_model()
-    except Exception:
-        pass
-    try:
-        status = audio_analyzer.get_runtime_status()
+        analyzer = get_audio_analyzer()
+        status = analyzer.get_runtime_status()
     except Exception as e:
         status = {"error": str(e)}
     return JSONResponse(content=status)
@@ -183,9 +195,15 @@ async def analyze_audio(file: UploadFile = File(...)):
         
         # Offload CPU/GPU-bound audio analysis to a worker thread
         loop = asyncio.get_event_loop()
-        emotion, confidence = await loop.run_in_executor(None, lambda: audio_analyzer.analyze_audio(file_path))
+        
+        def analyze_audio_sync():
+            analyzer = get_audio_analyzer()
+            return analyzer.analyze_audio(file_path)
+            
+        emotion, confidence = await loop.run_in_executor(None, analyze_audio_sync)
         
         # Get emoji and description
+        emotion_analyzer = get_emotion_analyzer()
         emoji = emotion_analyzer.get_emotion_emoji(emotion)
         description = emotion_analyzer.get_emotion_description(emotion, confidence)
         
@@ -225,39 +243,52 @@ async def analyze_frame(request: Request):
             import base64
             import numpy as np
 
-            # Remove data URL prefix if present
-            img_data = image_data.split(",")[1] if image_data.startswith("data:image") else image_data
-            image_bytes = base64.b64decode(img_data)
-            nparr = np.frombuffer(image_bytes, np.uint8)
-            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            if image is None:
-                return {"error": "Could not decode image", "status": 400}
+            try:
+                # Get cv2 lazily
+                cv2 = get_cv2()
+                
+                # Remove data URL prefix if present
+                img_data = image_data.split(",")[1] if image_data.startswith("data:image") else image_data
+                image_bytes = base64.b64decode(img_data)
+                nparr = np.frombuffer(image_bytes, np.uint8)
+                
+                # Validate array before decoding
+                if len(nparr) == 0:
+                    return {"error": "Empty image data", "status": 400}
+                
+                image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if image is None:
+                    return {"error": "Could not decode image - invalid format", "status": 400}
+                    
+            except Exception as decode_error:
+                return {"error": f"Image decoding failed: {str(decode_error)}", "status": 400}
 
-            # Initialize on first use
-            global _face_detector_instance
-            if _face_detector_instance is None:
-                _face_detector_instance = FaceDetector()
-            detector = _face_detector_instance
+            try:
+                # Get detectors lazily
+                detector = get_face_detector()
+                emotion_analyzer = get_emotion_analyzer()
 
-            faces, _ = detector.detect_faces(image)
-            if len(faces) == 0:
-                return {"faces": []}
+                faces, _ = detector.detect_faces(image)
+                if len(faces) == 0:
+                    return {"faces": []}
 
-            face_results = []
-            for face_location in faces:
-                face_img = detector.extract_face(image, face_location)
-                if not detector.is_valid_face(face_img):
-                    continue
-                emotion, confidence = emotion_analyzer.analyze_emotion(face_img)
-                emoji = emotion_analyzer.get_emotion_emoji(emotion)
-                description = emotion_analyzer.get_emotion_description(emotion, confidence)
-                face_results.append({
-                    "emotion": emotion,
-                    "confidence": confidence,
-                    "emoji": emoji,
-                    "description": description
-                })
-            return {"faces": face_results}
+                face_results = []
+                for face_location in faces:
+                    face_img = detector.extract_face(image, face_location)
+                    if not detector.is_valid_face(face_img):
+                        continue
+                    emotion, confidence = emotion_analyzer.analyze_emotion(face_img)
+                    emoji = emotion_analyzer.get_emotion_emoji(emotion)
+                    description = emotion_analyzer.get_emotion_description(emotion, confidence)
+                    face_results.append({
+                        "emotion": emotion,
+                        "confidence": confidence,
+                        "emoji": emoji,
+                        "description": description
+                    })
+                return {"faces": face_results}
+            except Exception as analysis_error:
+                return {"error": f"Face analysis failed: {str(analysis_error)}", "status": 500}
 
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, process_sync)

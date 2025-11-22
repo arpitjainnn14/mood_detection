@@ -15,9 +15,9 @@ class Settings:
             'detection_interval': 30,
             'show_fps': True,
             'save_screenshots': True,
-            'emotion_smoothing': 3,
-            'min_face_size': 30,
-            'detection_quality': 'balanced',  # balanced, performance, quality
+            'emotion_smoothing': 2,  # Reduced from 3 for faster processing
+            'min_face_size': 40,  # Increased for better performance
+            'detection_quality': 'performance',  # Changed from 'balanced' for speed
         }
         self._load()
 
